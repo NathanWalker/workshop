@@ -1,6 +1,6 @@
-## App Challenge Part 1 - Build a List
+## Code sharing in Nx with web and NativeScript mobile apps
 
-Now that you’ve got the NativeScript basics down, it’s time to put your skills to the test. Your task in the next three chapters is to build an entire NativeScript app from scratch.
+Now that you’ve got the NativeScript basics down, it’s time to put your skills to the test. Your task in the next three chapters is to utilize these new skills to maximize code sharing between a web app and a NativeScrip mobile app.
 
 ### What you’re building
 
@@ -15,29 +15,53 @@ Don’t get too overwhelmed the scope of this app as you’ll be building it one
 
 ### Building the list
 
-Let’s get started building by starting a new project.
+Let’s get started building by creating a new Nx workspace.
 
 <h4 class="exercise-start">
-  <b>Exercise</b>: Create FurFriendster
+  <b>Exercise</b>: Create an Nx workspace with a web + mobile app and a shared lib
 </h4>
 
-Navigate to a folder where you’d like your new project to live in your file system, and run the following command.
+Navigate to a folder where you’d like your new workspace to live in your file system, and run the following commands.
 
 ```
-tns create FurFriendster --ng
+npm install -g @nrwl/schematics
+npm install -g @angular/cli
+create-nx-workspace mycompany
 ```
 
-After that completes, `cd` into your newly created project.
+After that completes, `cd` into your newly created workspace.
 
 ```
-cd FurFriendster
+cd mycompany
 ```
+
+We will want to go ahead and add a web app.
+
+```
+ng generate app web
+```
+
+Let's now create a NativeScript mobile app.
+
+```
+cd apps
+tns create mobile --template https://github.com/NathanWalker/template-nativescript-nx
+cd ..
+```
+
+We now have a web and mobile app setup ready to develop. 
+
+To get started sharing code we want to create our first shared lib.
+
+```
+ng generate lib core
+```
+
+This will generate a `CoreModule` we will use to build out various foundational elements to enrich our entire workspace.
 
 <div class="exercise-end"></div>
 
-Your task for the first part of building this app is to create a big list of pets. Specifically, you’ll want your UI to look something like this.
 
-![](images/chapter7/1.png?raw=true)
 
 For the most part you will be building this app on your own without any copy-and-paste guidance from us, but we are going to provide a few things.
 
