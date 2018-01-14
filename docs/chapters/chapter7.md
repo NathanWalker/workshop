@@ -13,12 +13,12 @@ So what are you building? The ultimate app for finding pets of all shapes and si
 
 Don’t get too overwhelmed the scope of this app as you’ll be building it one step at a time. Let’s start by building the list page.
 
-### Building the list
+### Create an Nx workspace
 
 Let’s get started building by creating a new Nx workspace.
 
 <h4 class="exercise-start">
-  <b>Exercise</b>: Create an Nx workspace with a web + mobile app and a shared lib
+  <b>Exercise</b>: Create an Nx workspace containing (web + mobile) apps + shared lib
 </h4>
 
 Navigate to a folder where you’d like your new workspace to live in your file system, and run the following commands.
@@ -35,7 +35,7 @@ After that completes, `cd` into your newly created workspace.
 cd mycompany
 ```
 
-We will want to go ahead and add a web app.
+Let's generate our web app which will end up being a standard Angular CLI web application.
 
 ```
 ng generate app web
@@ -49,7 +49,7 @@ tns create mobile --template https://github.com/NathanWalker/template-nativescri
 cd ..
 ```
 
-We now have a web and mobile app setup ready to develop. 
+We now have our web and mobile apps setup ready to develop. 
 
 To get started sharing code we want to create our first shared lib.
 
@@ -57,16 +57,24 @@ To get started sharing code we want to create our first shared lib.
 ng generate lib core
 ```
 
-This will generate a `CoreModule` we will use to build out various foundational elements to enrich our entire workspace.
+This will generate a `CoreModule` we will use to provide various foundational services to enrich our entire workspace for our entire company.
 
 <div class="exercise-end"></div>
 
+For the most part you will be building out your company's workspace on your own without any copy-and-paste guidance from us, but we are going to provide a few things. 
 
+### Background on why we are about to build our foundation?
 
-For the most part you will be building this app on your own without any copy-and-paste guidance from us, but we are going to provide a few things.
+The browser global `window` object does not exist in a native mobile app since you are not working with browser api's however NativeScript provides a few common browser like api's which help provide a familiar developer experience to web developers.
+
+Things like `setTimeout`, `setInterval`, `alert`, `confirm` and several others are provided in the global context as you can see [here](https://github.com/NativeScript/NativeScript/blob/master/tns-core-modules/globals/globals.ts#L153-L179). You can see each is mapped to an according NativeScript module which correlates to iOS or Android platform specific api's.
+
+One important thing to note is that the browser `alert` returns `void` however in NativeScript it returns a `Promise`. When sharing code we want all of our core (low-level) api's to have common return types and behavior. This provides more opportunities for greater code sharing and consistency.
+
+With Angular's powerful dependency injection we have the chance to enrich even the browser `alert` to return a `Promise` as well via a configurable service.
 
 <h4 class="exercise-start">
-  <b>Exercise</b>: Get the starting files
+  <b>Exercise</b>: Build solid foundational services
 </h4>
 
 FurFriendster is driven by the [Petfinder API](https://www.petfinder.com/developers/api-docs), and we have a pre-configured Angular service and a few model objects you can use to get the data you need. To install it run the following command:
