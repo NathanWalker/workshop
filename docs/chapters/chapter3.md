@@ -144,31 +144,6 @@ Each of the input components you used a moment ago allows you to use `[(ngModel)
     <b>Exercise</b>: Two-way binding
 </h4>
 
-Before you use `[(ngModel)]` in your app, you need to add `NativeScriptFormsModule` to `@NgModule` => `imports`, so let's do that now.
-
-#### Step 1
-
-Open `app.module.ts` and uncomment the line that imports `NativeScriptFormsModule`.
-
-``` html
-import { NativeScriptFormsModule } from 'nativescript-angular/forms';
-```
-
-Then uncomment the line that adds `NativeScriptFormsModule` to the `@NgModule` imports array:
-
-``` html
-imports: [
-  NativeScriptModule,
-  AppRoutingModule,
-  NativeScriptUIDataFormModule,
-  NativeScriptHttpModule,
-  NativeScriptFormsModule
-],
-```
-
-
-#### Step 2
-
 Update all input components to use two-way binding.
 Test it by clicking the Clear and Save buttons and see what happens.
 
@@ -547,15 +522,14 @@ NativeScript comes with an additional `FREE` UI library called [NativeScript UI]
 
 You can find the Angular Docs for these components [here](http://docs.telerik.com/devtools/nativescript-ui/Controls/Angular/overview)
 
-#### Adding NativeScript UI to a project
+#### Using NativeScript UI to a project
 
-To install it, we only need to run:
-`tns plugin add nativescript-pro-ui`
+The `nativescript-pro-ui` should already be installed in the project.
 
-Then we need to add the necessary Modules to `@NgModule`. For example:
+To use it we need to add the necessary Modules to `@NgModule`. For example:
 
 ```
-import { NativeScriptUICalendarModule } from 'nativescript-pro-ui/dataform/angular';
+import { NativeScriptUICalendarModule } from 'nativescript-pro-ui/calendar/angular';
 ...
 
 @NgModule({

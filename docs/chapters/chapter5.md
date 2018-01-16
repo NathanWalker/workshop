@@ -499,12 +499,12 @@ You will notice that `my-fixture` expects a `[fixture]` attribute. This will be 
 The template in `competition-fixtures.component.html` should look like this:
 
 ``` XML
-<template let-fixture="item">
+<ng-template let-fixture="item">
   <StackLayout class="list-group-item">
     <!-- Fixture Template -->
     <my-fixture [fixture]="fixture"></my-fixture>
   </StackLayout>
-</template>
+</ng-template>
 ```
 
 <div class="solution-end"></div>
@@ -682,7 +682,7 @@ Note that `$event` will contain the value passed into `emit`, in this case this 
 
 In this exercise we need to update the app, so that if the user taps on a team in the league table, the app should navigate to `TeamComponent` with `teamId` of that team.
 
-Even though you could make it happen by adding `[nsRouterLink]` on each team standing. We want the navigation logic to be delegated to the parent component, so it should be the `TablesComponent` that should trigger the navigation.
+Even though you could make it happen by adding `[nsRouterLink]` on each team standing, we want the navigation logic to be delegated to the parent component, so it should be the `TablesComponent` that should trigger the navigation.
 
 > So in short: when the user taps on a team, we need the `LeagueTableComponent` to emit `teamSelected` with the `teamId`. And the `TablesComponent` should intercept the `teamSelected` event and call `onTeamSelected` where it should navigate to the `TeamComponent`.
 
