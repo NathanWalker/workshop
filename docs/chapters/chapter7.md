@@ -13,12 +13,12 @@ So what are you building? The ultimate app for finding pets of all shapes and si
 
 Don’t get too overwhelmed the scope of this app as you’ll be building it one step at a time. Let’s start by building the list page.
 
-### Create an Nx workspace
+### Create an Nx workspace containing (web + mobile) apps + shared lib
 
 Let’s get started building by creating a new Nx workspace.
 
 <h4 class="exercise-start">
-  <b>Exercise</b>: Create an Nx workspace containing (web + mobile) apps + shared lib
+  <b>Exercise</b>: Create an Nx workspace containing (web + mobile) apps
 </h4>
 
 Navigate to a folder where you’d like your new workspace to live in your file system, and run the following commands.
@@ -115,23 +115,13 @@ npm-debug.log
 app/app.scss
 ```
 
+<div class="exercise-end"></div>
+
 You can now run `npm start` to develop the web app and `npm run start.ios` or `npm run start.android` to develop the iOS or Android apps.
 
 ### 7.1 Create a shared lib
 
-To get started sharing code we want to create our first shared lib. Since we will build a foundational layer of services which will serve as the `core` to our companies stategic code sharing objective we will aptly name this `core`.
-
-```
-ng generate lib core
-```
-
-This will generate a `CoreModule` we will use to provide various foundational services to enrich our entire workspace for our entire company.
-
-<div class="exercise-end"></div>
-
-For the most part you will be building out your company's workspace on your own without any copy-and-paste guidance from us, but we are going to provide a few things. 
-
-### Background on why we are about to build our foundation?
+#### Background on why we are about to build a foundational layer of services?
 
 The browser global `window` object does not exist in a native mobile app since you are not working with browser api's however NativeScript provides a few common browser like api's which help provide a familiar developer experience to web developers.
 
@@ -142,8 +132,308 @@ One important thing to note is that the browser `alert` returns `void` however i
 With Angular's powerful dependency injection we have the chance to enrich even the browser `alert` to return a `Promise` as well via a configurable service.
 
 <h4 class="exercise-start">
-  <b>Exercise</b>: Build solid foundational services
+  <b>Exercise</b>: Build our first foundational service
 </h4>
+
+To get started sharing code we want to create our first shared lib. Since we will build a foundational layer of services which will serve as the `core` to our companies stategic code sharing objective we will aptly name this `core`.
+
+```
+ng generate lib core
+```
+
+This will generate a `CoreModule` we will use to provide various foundational services to enrich our entire workspace for our entire company.
+
+For the most part you will be building out your company's workspace on your own without any copy-and-paste guidance from us, but we are going to provide a few things. 
+
+Create `libs/core/src/services/window.service.ts` with the following:
+
+```
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class WindowPlatformService {
+  public alert(msg: any) { };
+  public confirm(msg: any) { };
+}
+
+@Injectable()
+export class WindowService {
+
+  private _dialogOpened = false;
+
+  constructor(
+    private _platformWindow: WindowPlatformService,
+  ) { }
+
+  public alert(msg: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!this._dialogOpened) {
+        this._dialogOpened = true;
+        this._resultHandler(this._platformWindow.alert(msg), resolve, reject, true);
+      }
+    });
+  }
+
+  public confirm(msg: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!this._dialogOpened) {
+        this._dialogOpened = true;
+        this._resultHandler(this._platformWindow.confirm(msg), resolve, reject);
+      }
+    });
+  }
+
+  private _resultHandler(result: any, resolve: (result?: any) => void, reject: (reason?: any) => void, alwaysResolve?: boolean) {
+    if (typeof result === 'object' && result.then) {
+      result.then((result) => {
+        if (alwaysResolve || result) {
+          resolve(result);
+        } else {
+          reject();
+        }
+        this._dialogOpened = false;
+      }, (err) => {
+        reject(err);
+        this._dialogOpened = false;
+      });
+    } else {
+      if (alwaysResolve || result) {
+        resolve(result);
+      } else {
+        reject();
+      }
+      this._dialogOpened = false;
+    }
+  }
+}
+```
+
+Now create `libs/core/src/services/index.ts` with the following:
+
+```
+import { WindowService } from './window.service';
+
+export const PROVIDERS = [
+    WindowService
+];
+
+export * from './window.service';
+```
+
+Now modify our `CoreModule` to look like this:
+
+```
+import { NgModule, ModuleWithProviders, Optional, SkipSelf } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+// app
+import { throwIfAlreadyLoaded } from './helpers';
+import { PROVIDERS } from './services';
+
+export const BASE_PROVIDERS: any[] = [
+  ...PROVIDERS,
+];
+
+@NgModule({
+  imports: [CommonModule],
+})
+export class CoreModule {
+  static forRoot(configuredProviders: Array<any>): ModuleWithProviders {
+    return {
+      ngModule : CoreModule,
+      providers : [
+        ...BASE_PROVIDERS,
+        ...configuredProviders
+      ],
+    };
+  }
+
+  constructor(@Optional() @SkipSelf() parentModule: CoreModule) {
+    throwIfAlreadyLoaded(parentModule, 'CoreModule');
+  }
+}
+```
+
+There's quite a bit to unpack here so we'll discuss this however you'll notice we are using a helper we haven't created yet! So let's create our first shared helper.
+
+Create `libs/core/src/helpers/angular.ts` with the following:
+
+```
+export function throwIfAlreadyLoaded(
+  parentModule: any,
+  moduleName: string,
+) {
+  if ( parentModule ) {
+    throw new Error(`${moduleName} has already been loaded. Import ${moduleName} in the AppModule only.`);
+  }
+}
+```
+
+Now following our code standard also create `libs/core/src/helpers/index.ts` with the following:
+
+```
+export * from './angular';
+```
+
+<div class="exercise-end"></div>
+
+Now let's talk about this.
+
+### 7.2 Use shared service in web and mobile
+
+#### Use platform provider for web
+
+It's now time to reap the benefits of what we've setup here.
+
+Before we use our shared service in our apps let's ensure we have exported everything we just created.
+Open `libs/core/src/index.ts` and make following changes:
+
+```
+export * from './src/helpers';
+export * from './src/services';
+export { CoreModule } from './src/core.module';
+```
+
+Now we can share everything we created with our web and mobile apps.
+
+Each of our apps will have their own `CoreModule`'s so we will setup our web app module now.
+
+<h4 class="exercise-start">
+  <b>Exercise</b>: Use shared lib in web app
+</h4>
+
+Create `apps/web/src/app/modules/core/core.module`:
+
+```
+import { NgModule, Optional, SkipSelf } from '@angular/core';
+// libs
+import {
+  CoreModule as LibCoreModule,
+  WindowPlatformService,
+  throwIfAlreadyLoaded
+} from '@mycompany/core';
+
+// factories
+export function platformWindow() {
+  return window;
+}
+
+@NgModule({
+  imports: [
+    LibCoreModule.forRoot([
+      {
+        provide: WindowPlatformService,
+        useFactory: platformWindow,
+      }
+    ])
+  ]
+})
+export class CoreModule {
+  constructor( @Optional() @SkipSelf() parentModule: CoreModule) {
+    throwIfAlreadyLoaded(parentModule, 'CoreModule');
+  }
+}
+```
+
+Open `apps/web/src/app/app.module` and let's use this:
+
+```
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+// libs
+import { NxModule } from '@nrwl/nx';
+
+// app
+import { CoreModule } from './modules/core/core.module';
+import { AppComponent } from './app.component';
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    NxModule.forRoot(),
+    CoreModule
+  ],
+  declarations: [AppComponent],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+To try this out let's add some buttons and logic to our app component. Modify `apps/web/src/app/app.component.html` as follows:
+
+```
+<p>
+  <button type="button" (click)="alert('Hello')">Show Alert</button>
+</p>
+<p>
+  <button type="button" (click)="confirm('Are you sure?')">Show Confirm</button>
+</p>
+```
+
+Now modify `apps/web/src/app/app.component.ts` as follows:
+
+```
+import { Component } from '@angular/core';
+
+import { WindowService } from '@mycompany/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+
+  constructor(
+    private _win: WindowService
+  ) { }
+
+  public alert(msg: string) {
+    this._win.alert(msg).then(_ => {
+      console.log('alert dismissed.');
+    });
+  }
+
+  public confirm(msg: string) {
+    this._win.confirm(msg).then((confirmed) => {
+      console.log('confirm:', confirmed);
+    }, _ => {
+      console.log('confirm canceled.');
+    });
+  }
+}
+```
+
+Now try this out in the browser: `npm start`
+
+<div class="exercise-end"></div>
+
+Hopefully you are starting to see the benefits of what we are building.
+
+#### Use platform provider for mobile
+
+We now have a consistent way to provide `alert` and `confirm` dialogs with easy to use `Promise` resolution handling whether the code exists in shared code or in our web and mobile apps.
+
+Let's now apply these same practices to mobile.
+
+<h4 class="exercise-start">
+  <b>Exercise</b>: Use shared lib in mobile app
+</h4>
+
+Create `apps/mobile/app/modules/core/core.module`:
+
+```
+
+```
+
+<div class="exercise-end"></div>
+
+
+
+
+............... old ......
+
 
 FurFriendster is driven by the [Petfinder API](https://www.petfinder.com/developers/api-docs), and we have a pre-configured Angular service and a few model objects you can use to get the data you need. To install it run the following command:
 
