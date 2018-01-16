@@ -35,11 +35,30 @@ After that completes, `cd` into your newly created workspace.
 cd mycompany
 ```
 
+#### Create web app
+
 Let's generate our web app which will end up being a standard Angular CLI web application.
 
 ```
 ng generate app web
 ```
+
+We are going to want to use `SASS` for all our styling so let's make the following adjustments:
+
+1. Open `.angular-cli.json` and change `"defaults"."styleExt"` to `scss`.
+2. Open `apps/web/src` and rename `styles.css` to `styles.scss`.
+
+Just add a `body` style to our `styles.scss` so we know it's working:
+
+```
+body {
+    background-color: lightgrey;
+}
+```
+
+We can now run `npm start` and navigate to `http://localhost:4200` to see our web app.
+
+#### Create mobile app
 
 Let's now create a NativeScript mobile app.
 
@@ -49,9 +68,58 @@ tns create mobile --template https://github.com/NathanWalker/template-nativescri
 cd ..
 ```
 
-We now have our web and mobile apps setup ready to develop. 
+#### Followup steps to satisfy Nx workspace setup
 
-To get started sharing code we want to create our first shared lib.
+We now have our web and mobile apps setup ready to develop but we want to add some scripts to run these specifically. Open `package.json` and add the following in between `ng` and `build`:
+
+```
+--- "ng": "ng", ---
+"start": "npm run start.web",
+"start.web": "ng serve --app=web",
+"start.ios": "cd apps/mobile && tns run ios --emulator --syncAllFiles",
+"start.android": "cd apps/mobile && tns run android --emulator --syncAllFiles",
+--- "build": "ng build", --- 
+```
+
+To ensure the workspace unit tests can still be run against the web code open `tsconfig.spec.json` and add `apps/mobile` to the `exclude` block.
+
+Before going further you will absolutely want to add a `.gitignore` inside the `apps/mobile` directory containing the following:
+
+```
+# system files
+.DS_Store
+Thumbs.db
+
+# nativescript
+/hooks
+/node_modules
+/platforms
+/lib
+
+app/**/*.js
+app/**/*.d.ts
+app/**/*.map
+app/**/*.css
+
+# misc
+npm-debug.log
+
+# app
+!app/assets/font-awesome.min.css
+/report/
+.nsbuildinfo
+/temp/
+/app/tns_modules/
+
+# app uses platform specific scss which can inadvertently get renamed which will cause problems
+app/app.scss
+```
+
+You can now run `npm start` to develop the web app and `npm run start.ios` or `npm run start.android` to develop the iOS or Android apps.
+
+### 7.1 Create a shared lib
+
+To get started sharing code we want to create our first shared lib. Since we will build a foundational layer of services which will serve as the `core` to our companies stategic code sharing objective we will aptly name this `core`.
 
 ```
 ng generate lib core
