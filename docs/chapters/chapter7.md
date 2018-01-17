@@ -151,7 +151,7 @@ Create `libs/core/src/services/window.service.ts` with the following:
 import { Injectable } from '@angular/core';
 
 @Injectable()
-export class WindowPlatformService {
+export class PlatformWindowService {
   public alert(msg: any) { };
   public confirm(msg: any) { };
 }
@@ -162,7 +162,7 @@ export class WindowService {
   private _dialogOpened = false;
 
   constructor(
-    private _platformWindow: WindowPlatformService,
+    private _platformWindow: PlatformWindowService,
   ) { }
 
   public alert(msg: any): Promise<any> {
@@ -309,7 +309,7 @@ import { NgModule, Optional, SkipSelf } from '@angular/core';
 // libs
 import {
   CoreModule as LibCoreModule,
-  WindowPlatformService,
+  PlatformWindowService,
   throwIfAlreadyLoaded
 } from '@mycompany/core';
 
@@ -322,7 +322,7 @@ export function platformWindow() {
   imports: [
     LibCoreModule.forRoot([
       {
-        provide: WindowPlatformService,
+        provide: PlatformWindowService,
         useFactory: platformWindow,
       }
     ])
@@ -421,7 +421,7 @@ Let's now apply these same practices to mobile.
   <b>Exercise</b>: Use shared lib in mobile app
 </h4>
 
-You will find that the NativeScript Nx template already set you up with a `CoreModule` so we can just import our shared module there. However we will want to create a slim service to help provide for our  `WindowPlatformService` on mobile.
+You will find that the NativeScript Nx template already set you up with a `CoreModule` so we can just import our shared module there. However we will want to create a slim service to help provide for our  `PlatformWindowService` on mobile.
 
 Create `apps/mobile/app/modules/core/services/window-mobile.service.ts` with the following:
 
@@ -430,10 +430,10 @@ import { Injectable } from '@angular/core';
 
 // libs
 import { alert as tnsAlert, confirm as tnsConfirm } from 'tns-core-modules/ui/dialogs';
-import { WindowPlatformService } from '@mycompany/core';
+import { PlatformWindowService } from '@mycompany/core';
 
 @Injectable()
-export class WindowMobileService extends WindowPlatformService {
+export class WindowMobileService extends PlatformWindowService {
 
   public alert(msg: any) {
     return tnsAlert(msg);
@@ -467,7 +467,7 @@ import { TNSFontIconModule } from 'nativescript-ngx-fonticon';
 import { } from 'tns-core-modules/platform';
 import {
   CoreModule as LibCoreModule,
-  WindowPlatformService,
+  PlatformWindowService,
 } from '@mycompany/core';
 
 // app
@@ -479,7 +479,7 @@ import { ITEMS_PROVIDERS } from '../items/services';
   imports: [
     LibCoreModule.forRoot([
       {
-        provide: WindowPlatformService,
+        provide: PlatformWindowService,
         useClass: WindowMobileService,
       },
     ]),
@@ -537,122 +537,150 @@ libs/**/*.ngfactory.ts
 libs/**/*.ngsummary.json
 ```
 
+### 7.3 Locale platform provider :)
 
+Let's continue building out our foundational service layer with a nice way to handle the default platform locale of the user.
 
-
-............... old ......
-
-
-FurFriendster is driven by the [Petfinder API](https://www.petfinder.com/developers/api-docs), and we have a pre-configured Angular service and a few model objects you can use to get the data you need. To install it run the following command:
+Create `libs/core/src/helpers/tokens.ts` with the following:
 
 ```
-npm i petfinder-angular-service --save
+import { InjectionToken } from '@angular/core';
+
+export const PlatformLanguageToken = new InjectionToken<string>('PlatformLanguageToken');
 ```
 
-Alternatively (if npm install doesn't work) you can open the `workshop` folder you’ve been working in today, and find its child `app-challenge-files` folder. Next, copy every file and folder in `app-challenge-files`, and paste them into your new `FurFriendster` app.
-
-<div class="exercise-end"></div>
-
-Eventually in this workshop you’ll allow users to filter which types of pets they’d like to see on the list page, but for now you’ll need to hardcode some really basic animal data.
-
-On your list page you’ll need to call your new service’s `findPets()` method. Here is some data you can pass in for testing.
+Ensure we export our tokens from the `helpers` barrel (`libs/core/src/helpers/index.ts`):
 
 ```
-findPets("10001", {    // 10001 is the US zip code for New York City
-  age: "",
-  animal: "bird",      // you can replace this with "cat", "dog", etc
-  breed: "",
-  sex: "",
-  size: ""
-});
+export * from './angular';
+export * from './tokens';
 ```
 
-So now it’s time to get building. Here are your requirements for this part of the workshop.
+#### Provide web locale 
 
-### Requirements
-
-* **1**: Show the list of pets returned from `findPets` using a `<ListView>` UI component.
-* **2**: Each entry in the `<ListView>` should display the pet’s name and its image.
-
-From there it’s up to you. Feel free to implement the design we show in this section’s screenshots, or to build something unique. If you get stuck here are a few tips you can refer to.
-
-### Tips
-
-#### Tip #1: ListView
-
-The NativeScript ListView documentation is available at <https://docs.nativescript.org/angular/ui/list-view.html>.
-
-<h4 class="exercise-start">
-  Setup your List
-</h4>
-
-Make sure to start work in `app.module.ts`. You will need to import the NativeScriptHttpModule:
+Modify `apps/web/src/app/modules/core/core.module.ts` as follows:
 
 ```
-import { NativeScriptHttpModule } from "nativescript-angular/http";
-```
-and include that in `imports`. 
+import { NgModule, Optional, SkipSelf } from '@angular/core';
+// libs
+import {
+  CoreModule as LibCoreModule,
+  PlatformWindowService,
+  PlatformLanguageToken,
+  throwIfAlreadyLoaded
+} from '@mycompany/core';
 
-Likewise, import your petfinder service that you installed from npm:
+// factories
+export function platformWindow() {
+  return window;
+}
 
-```
-import { PetFinderService } from "petfinder-angular-service";
-```
+export function platformLanguage() {
+  return window.navigator.language;
+}
 
-and include it in your Providers. 
-
-Then, start your work in `items.component.ts` by importing the petfinder service and pet model. 
-
-Change `items` to `pets` and edit ngOnInit() with the new service call, returning a promise:
-
-```
-this.petService.findPets("10001", {
-  age: "",
-  animal: "bird",
-  breed: "",
-  sex: "",
-  size: ""
+@NgModule({
+  imports: [
+    LibCoreModule.forRoot([
+      {
+        provide: PlatformWindowService,
+        useFactory: platformWindow,
+      },
+      {
+        provide: PlatformLanguageToken,
+        useFactory: platformLanguage,
+      }
+    ])
+  ]
 })
-.then(pets => this.pets = pets)
+export class CoreModule {
+  constructor( @Optional() @SkipSelf() parentModule: CoreModule) {
+    throwIfAlreadyLoaded(parentModule, 'CoreModule');
+  }
+}
 ```
 
-Then, get to work on the `items.component.html` file, editing the ListView to display the pets.
-
-<div class="exercise-end"></div> 
-
-#### Tip #2: Images
-
-Our service provides a convenience method for accessing the appropriate pet images. You can bind an `<Image>` tag using the following code.
+To see this working we can just inject the token into our app component for instance (`apps/web/src/app/app.component.ts`):
 
 ```
-[src]="item.media.getFirstImage(2, 'res://icon')"
-```
-<h4 class="exercise-start">
-  Help loading external images
-</h4>
+...
+import { WindowService, PlatformLanguageToken } from '@mycompany/core';
 
-> Note: You may encounter an error when loading images from external sources on iOS. To fix this, add the following code right under the initial `<dict>` key in `App_Resources/iOS/Info.plist`:
+...
+export class AppComponent implements OnInit {
 
-```
-<key>NSAppTransportSecurity</key>
-<dict>
-  <key>NSExceptionDomains</key>
-  <dict>
-    <key>photos.petfinder.com</key>
-    <dict>
-      <key>NSExceptionAllowsInsecureHTTPLoads</key>
-      <true/>
-      <key>NSIncludesSubdomains</key>
-      <true/>
-    </dict>
-  </dict>
-</dict>
+  constructor(
+    private _win: WindowService,
+    @Inject(PlatformLanguageToken) private _lang: string
+  ) {
+    console.log('platformLanguage:', this._lang);
+  }
+
+  ...
+}
 ```
 
-> **Hint**: use a GridLayout within your ListView template to layout the image next to the label. 
+You can run `npm start` and see the default browser locale.
 
-<div class="exercise-end"></div>
+#### Provide mobile device locale
 
-#### Tip #3: Styling
+Modify `apps/mobile/app/modules/core/core.module.ts` as follows:
 
-The NativeScript core theme has a few CSS class names for displaying thumbnail images. Check out <https://docs.nativescript.org/ui/theme#listviews> for details.
+```
+...
+// libs
+import { TNSFontIconModule } from 'nativescript-ngx-fonticon';
+import { device } from 'tns-core-modules/platform';
+import {
+  CoreModule as LibCoreModule,
+  PlatformWindowService,
+  PlatformLanguageToken,
+} from '@mycompany/core';
+
+...
+
+// factories
+export function platformLanguage() {
+  return device.language;
+}
+
+@NgModule({
+  imports: [
+    LibCoreModule.forRoot([
+      {
+        provide: PlatformWindowService,
+        useClass: WindowMobileService,
+      },
+      {
+        provide: PlatformLanguageToken,
+        useFactory: platformLanguage,
+      },
+    ]),
+    ...
+  ],
+  ...
+})
+export class CoreModule { }
+```
+
+We will inject our token into the mobile app component to try this out (`apps/mobile/app/app.component.ts`):
+
+```
+...
+// libs
+import { PlatformLanguageToken } from '@mycompany/core';
+
+...
+export class AppComponent {
+  constructor(
+    // ensure singleton construction on app boot)
+    private _appService: AppService,
+    @Inject(PlatformLanguageToken) private _lang: string,
+  ) {
+    console.log('platformLanguage:', this._lang);
+  }
+}
+```
+
+We will now see the device locale when the iOS and Android apps start via the console. 
+
