@@ -421,13 +421,121 @@ Let's now apply these same practices to mobile.
   <b>Exercise</b>: Use shared lib in mobile app
 </h4>
 
-Create `apps/mobile/app/modules/core/core.module`:
+You will find that the NativeScript Nx template already set you up with a `CoreModule` so we can just import our shared module there. However we will want to create a slim service to help provide for our  `WindowPlatformService` on mobile.
+
+Create `apps/mobile/app/modules/core/services/window-mobile.service.ts` with the following:
 
 ```
+import { Injectable } from '@angular/core';
+
+// libs
+import { alert as tnsAlert, confirm as tnsConfirm } from 'tns-core-modules/ui/dialogs';
+import { WindowPlatformService } from '@mycompany/core';
+
+@Injectable()
+export class WindowMobileService extends WindowPlatformService {
+
+  public alert(msg: any) {
+    return tnsAlert(msg);
+  }
+
+  public confirm(msg: any) {
+    return tnsConfirm(msg);
+  }
+}
+```
+
+Modify `apps/mobile/app/modules/core/services/index.ts` with:
 
 ```
+import { AppService } from './app.service';
+import { WindowMobileService } from './window-mobile.service';
+
+export const CORE_PROVIDERS = [
+  AppService,
+  WindowMobileService
+];
+```
+
+Now modify `apps/mobile/app/modules/core/core.module.ts` as follows:
+
+```
+import { NgModule } from '@angular/core';
+
+// libs
+import { TNSFontIconModule } from 'nativescript-ngx-fonticon';
+import { } from 'tns-core-modules/platform';
+import {
+  CoreModule as LibCoreModule,
+  WindowPlatformService,
+} from '@mycompany/core';
+
+// app
+import { CORE_PROVIDERS } from './services';
+import { WindowMobileService } from './services/window-mobile.service';
+import { ITEMS_PROVIDERS } from '../items/services';
+
+@NgModule({
+  imports: [
+    LibCoreModule.forRoot([
+      {
+        provide: WindowPlatformService,
+        useClass: WindowMobileService,
+      },
+    ]),
+    TNSFontIconModule.forRoot({
+      fa: './assets/font-awesome.min.css'
+    })
+  ],
+  providers: [
+    ...CORE_PROVIDERS,
+    ...ITEMS_PROVIDERS
+  ]
+})
+export class CoreModule { }
+```
+
+With this in place you may now try running the iOS or Android script `npm run start.ios` or `npm run start.android` and would see this error:
+
+![](images/chapter7/error1.png?raw=true)
+
+This is because NativeScript needs libs added as a package dependency to know what to build into the app. To resolve this, create `libs/core/package.json` with the following:
+
+```
+{
+  "name": "@mycompany/core",
+  "version": "1.0.0",
+  "main": "index",
+  "typings": "index.d.ts"
+}
+```
+
+We can now simply install this shared lib like anything else in our mobile app:
+
+```
+cd apps/mobile
+npm i ../../libs/core --save
+```
+
+Now we can run our mobile app `npm run start.ios` and check out `WindowService` with it's own platform provider at work.
 
 <div class="exercise-end"></div>
+
+#### Cleanup git
+
+If you ran `git status` now you would see `.js` files coming from `libs`. This occurs because the NativeScript app is building those out when the code is shared. We want to make sure those never end up in git history.
+
+Open `.gitignore` and add the following to the bottom:
+
+```
+# libs
+libs/**/*.js
+libs/**/*.map
+libs/**/*.d.ts
+libs/**/*.metadata.json
+libs/**/*.ngfactory.ts
+libs/**/*.ngsummary.json
+```
 
 
 
