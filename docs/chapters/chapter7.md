@@ -2,17 +2,6 @@
 
 Now that you’ve got the NativeScript basics down, it’s time to put your skills to the test. Your task in the next three chapters is to utilize these new skills to maximize code sharing between a web app and a NativeScrip mobile app.
 
-### What you’re building
-
-So what are you building? The ultimate app for finding pets of all shapes and sizes—FurFriendster! At the end of the day you’ll have an app that looks something like this.
-
-![](images/chapter7/0.png?raw=true)
-![](images/chapter7/1.png?raw=true)
-![](images/chapter7/2.png?raw=true)
-![](images/chapter7/3.png?raw=true)
-
-Don’t get too overwhelmed the scope of this app as you’ll be building it one step at a time. Let’s start by building the list page.
-
 ### Create an Nx workspace containing (web + mobile) apps + shared lib
 
 Let’s get started building by creating a new Nx workspace.
@@ -464,7 +453,6 @@ import { NgModule } from '@angular/core';
 
 // libs
 import { TNSFontIconModule } from 'nativescript-ngx-fonticon';
-import { } from 'tns-core-modules/platform';
 import {
   CoreModule as LibCoreModule,
   PlatformWindowService,
@@ -493,6 +481,68 @@ import { ITEMS_PROVIDERS } from '../items/services';
   ]
 })
 export class CoreModule { }
+```
+
+Then we will setup our main component much like we did for web. Modify `apps/mobile/app/modules/items/components/items/items.component.ts` since this represents our home view as follows:
+
+```
+import { Component, OnInit } from '@angular/core';
+
+// libs
+import { WindowService } from '@mycompany/core';
+// app
+import { Item } from '../../models';
+import { ItemService } from '../../services/item.service';
+
+@Component({
+  selector: 'ns-items',
+  moduleId: module.id,
+  templateUrl: './items.component.html'
+})
+export class ItemsComponent implements OnInit {
+  items: Item[];
+
+  constructor(
+    private _itemService: ItemService,
+    private _win: WindowService
+  ) { }
+
+  ngOnInit(): void {
+    this.items = this._itemService.getItems();
+  }
+
+  public alert(msg: string) {
+    this._win.alert(msg).then(_ => {
+      console.log('alert dismissed.');
+    });
+  }
+
+  public confirm(msg: string) {
+    this._win.confirm(msg).then((confirmed) => {
+      console.log('confirm:', confirmed);
+    }, _ => {
+      console.log('confirm canceled.');
+    });
+  }
+}
+```
+
+And update the template to:
+
+```
+<StackLayout class="page">
+    <Button text="Show alert" (tap)="alert('Hello')" class="btn btn-primary"></Button>
+    <Button text="Show confirm" (tap)="confirm('Are you sure?')" class="btn btn-primary"></Button>
+
+    <ListView [items]="items" class="list-group">
+        <ng-template let-item="item">
+            <StackLayout orientation="horizontal" class="p-x-10" [nsRouterLink]="['/items', item.id]">
+                <Label class="fa" [text]="'fa-futbol-o' | fonticon"></Label>
+                <Label [text]="item.name" class="list-group-item"></Label>
+            </StackLayout>
+        </ng-template>
+    </ListView>
+</StackLayout>
 ```
 
 With this in place you may now try running the iOS or Android script `npm run start.ios` or `npm run start.android` and would see this error:
