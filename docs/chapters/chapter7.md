@@ -573,7 +573,11 @@ Now we can run our mobile app `npm run start.ios` and check out `WindowService` 
 
 #### Cleanup git
 
-If you ran `git status` now you would see `.js` files coming from `libs`. This occurs because the NativeScript app is building those out when the code is shared. We want to make sure those never end up in git history.
+If you ran `git status` now you would see `.js` files coming from `libs` like the following:
+
+![](images/chapter7/git-issue.png?raw=true)
+
+This occurs because the NativeScript app is building those out when the code is shared. We want to make sure those never end up in git history.
 
 Open `.gitignore` and add the following to the bottom:
 
@@ -587,7 +591,7 @@ libs/**/*.ngfactory.ts
 libs/**/*.ngsummary.json
 ```
 
-### 7.3 Locale platform provider :)
+### 7.3 Locale platform provider 
 
 Let's continue building out our foundational service layer with a nice way to handle the default platform locale of the user.
 

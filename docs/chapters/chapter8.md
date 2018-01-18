@@ -2,7 +2,9 @@
 
 What we setup in Chapter 7 can be refactored to share more. Let's see if we can work together to reduce common code to our shared lib.
 
-### Use "abstract" base classes for common component traits
+### Tips
+
+#### Tip #1: Use "abstract" base classes for common component traits
 
 The commonality between the web's `app.component.ts` (home view) and mobiles `items.component.ts` (home view) is almost identical so we can refactor those common traits to a base abstract class.
 
